@@ -55,7 +55,7 @@ experience.forEach((job) => {
 const companyList = Object.values(groupedMap);
 ---
 
-<BaseLayout title={`About — ${site.title}`}>
+<BaseLayout title={`About`}>
   <div class="mx-auto max-w-3xl py-6">
     <!-- Header -->
     <div>
@@ -248,10 +248,6 @@ const companyList = Object.values(groupedMap);
     </section>
 
     <!-- CTA -->
-    <div class="mt-16 flex flex-wrap gap-3">
-      <Button href={site.cv} download>Download CV</Button>
-      {socials.map((s) => <Button href={s.href} variant="ghost" external>{s.label}</Button>)}
-    </div>
   </div>
 </BaseLayout>
 

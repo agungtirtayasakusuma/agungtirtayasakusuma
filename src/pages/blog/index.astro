@@ -8,7 +8,7 @@ const posts = (await getCollection('blog', ({ data }) => !data.draft))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
 ---
 
-<BaseLayout title="Journal — арговеста.notes" description="Network notes, lab logs, and articles.">
+<BaseLayout title="Journal" description="Network notes, lab logs, and articles.">
   <div class="py-4">
     <p class="meta uppercase tracking-widest text-green">Journal</p>
     <h1 class="mt-2 text-3xl font-semibold">Network notes</h1>

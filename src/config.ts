@@ -1,7 +1,7 @@
 // src/config.ts
 export const site = {
-  title: 'Agung Tirtayasa Kusuma',
-  author: 'Portofolio',
+  title: 'Portofolio',
+  author: 'Agung Tirtayasa Kusuma',
   role: 'Network Engineer',
   tagline: 'Learning by building. Improving one network at a time.',
   cv: '/cv.pdf',
