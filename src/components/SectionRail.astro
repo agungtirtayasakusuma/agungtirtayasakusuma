@@ -1,0 +1,59 @@
+---
+// src/components/SectionRail.astro
+import { homeSections } from '../config';
+---
+
+<nav class="section-rail hidden lg:block" aria-label="Sections on this page">
+  <p class="meta mb-2 text-muted/70">show ip int brief</p>
+  <ul class="flex flex-col">
+    {homeSections.map(({ id, sub, label }) => (
+      <li>
+        <a href={`#${id}`} data-rail-link class="rail-link">
+          <span class="rail-dot" aria-hidden="true"></span>
+          <span class="rail-name">{label}</span>
+          <span class="rail-iface meta tabular-nums">f0/1.{sub}</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .section-rail {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .rail-link {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color 0.15s ease;
+  }
+  .rail-link:hover { color: var(--color-fg); }
+
+  .rail-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--color-muted) 45%, transparent);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .rail-iface { color: transparent; transition: color 0.2s ease; }
+
+  .rail-link[data-active] { color: var(--color-heading); }
+  .rail-link[data-active] .rail-dot {
+    background: var(--color-green);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-green) 18%, transparent);
+  }
+  .rail-link[data-active] .rail-iface {
+    color: color-mix(in oklab, var(--color-green) 70%, transparent);
+  }
+</style>

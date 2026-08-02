@@ -1,0 +1,111 @@
+---
+// src/components/ScrollSpy.astro
+// Drop once per page that contains [data-section] elements.
+// No props — it reads everything it needs from the DOM.
+---
+
+<script>
+  function initScrollSpy() {
+    const sections = Array.from(document.querySelectorAll('[data-section]'));
+    if (!sections.length) return;
+
+    const root = document.documentElement;
+    if (root.dataset.spyReady === 'true') return;
+    root.dataset.spyReady = 'true';
+
+    const subEl = document.querySelector('[data-iface-sub]');
+    const railLinks = Array.from(document.querySelectorAll('[data-rail-link]'));
+    const header = document.getElementById('site-header');
+    const navH = header ? header.offsetHeight : 56;
+
+    const visible = new Set();
+    let current = null;
+    let queued = false;
+
+    function commit() {
+      queued = false;
+
+      let active = null;
+
+      // Bottom-of-document guard: the final section can never cross the
+      // activation band on a short page, so claim it explicitly.
+      const atBottom =
+        window.scrollY + window.innerHeight >= root.scrollHeight - 4;
+
+      if (atBottom) {
+        active = sections[sections.length - 1];
+      } else {
+        // First section in DOM order that is inside the band wins.
+        for (const s of sections) {
+          if (visible.has(s)) { active = s; break; }
+        }
+      }
+
+      // Nothing in the band (fast fling between sections): hold the last known
+      // state rather than flickering to empty.
+      if (!active || active === current) return;
+      current = active;
+
+      const sub = active.getAttribute('data-sub') || '';
+      const hash = active.getAttribute('data-hash') || '';
+
+      if (subEl) subEl.textContent = sub ? `.${sub}` : '';
+
+      for (const link of railLinks) {
+        const on = link.getAttribute('href') === hash;
+        link.toggleAttribute('data-active', on);
+        if (on) link.setAttribute('aria-current', 'true');
+        else link.removeAttribute('aria-current');
+      }
+
+      // replaceState, never pushState — pushState would stack one history entry
+      // per section and make the back button useless.
+      // history.state is preserved so Astro's scroll restoration keeps working.
+      const url = hash && hash !== '#overview' ? hash : location.pathname;
+      if (location.hash !== (hash === '#overview' ? '' : hash)) {
+        history.replaceState(history.state, '', url);
+      }
+    }
+
+    function schedule() {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(commit);
+    }
+
+    // Activation band: a horizontal strip just under the header.
+    // A section is "current" while its box overlaps that strip.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) visible.add(entry.target);
+          else visible.delete(entry.target);
+        }
+        schedule();
+      },
+      { rootMargin: `-${navH + 8}px 0px -62% 0px`, threshold: 0 }
+    );
+
+    for (const s of sections) observer.observe(s);
+
+    // The observer alone can't detect "user reached the very bottom", so pair it
+    // with a passive scroll listener that does nothing but schedule a re-check.
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+
+    schedule();
+
+    // Tear down before a client-side navigation swaps the document.
+    function destroy() {
+      observer.disconnect();
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      delete root.dataset.spyReady;
+      document.removeEventListener('astro:before-swap', destroy);
+    }
+    document.addEventListener('astro:before-swap', destroy);
+  }
+
+  initScrollSpy();
+  document.addEventListener('astro:page-load', initScrollSpy);
+</script>

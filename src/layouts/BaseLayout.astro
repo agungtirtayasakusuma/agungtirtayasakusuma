@@ -2,15 +2,17 @@
 // src/layouts/BaseLayout.astro
 import '@fontsource-variable/jetbrains-mono';
 import '../styles/global.css';
+import '../styles/flow.css';
+import { ClientRouter } from 'astro:transitions';
 import Nav from '../components/Nav.astro';
 import Footer from '../components/Footer.astro';
+import ScrollSpy from '../components/ScrollSpy.astro';
 import { site as siteMeta } from '../config';
 
 interface Props {
   title: string;
   description?: string;
   image?: string;
-  /** Set false on pages that manage their own width (rare). */
   contained?: boolean;
 }
 
@@ -53,6 +55,9 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
 
     <link rel="sitemap" href="/sitemap-index.xml" />
     <link rel="alternate" type="application/rss+xml" title={`${siteMeta.title} — journal`} href="/rss.xml" />
+
+    <!-- Cross-document transitions. Degrades to a normal MPA where unsupported. -->
+    <ClientRouter />
   </head>
 
   <body class="flex min-h-svh flex-col">
@@ -67,15 +72,14 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
 
     <main
       id="main"
-      class:list={[
-        'flex-1',
-        contained && 'shell',
-        'py-[clamp(2rem,5vw,3.5rem)]',
-      ]}
+      class:list={['flex-1', contained && 'shell', 'py-[clamp(2rem,5vw,3.5rem)]']}
     >
       <slot />
     </main>
 
     <Footer />
+
+    {/* No-op on pages without [data-section] elements. */}
+    <ScrollSpy />
   </body>
 </html>

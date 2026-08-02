@@ -1,12 +1,11 @@
 ---
 // src/components/Nav.astro
 import Logo from './Logo.astro';
-import { navLinks, isActivePath } from '../config';
+import { sections, sectionHref, getActiveSectionId } from '../config';
 
-const path = Astro.url.pathname;
+const ssrActive = getActiveSectionId(Astro.url.pathname);
 ---
 
-{/* Sentinel: lets the header know it has left the top of the document, with no scroll listener. */}
 <div id="nav-sentinel" aria-hidden="true"></div>
 
 <header id="site-header" class="site-header">
@@ -15,23 +14,19 @@ const path = Astro.url.pathname;
 
     <!-- Desktop -->
     <ul class="hidden items-center gap-0.5 text-sm md:flex">
-      {navLinks.map(({ label, href }) => {
-        const active = isActivePath(path, href);
-        return (
-          <li>
-            <a
-              href={href}
-              aria-current={active ? 'page' : undefined}
-              class:list={[
-                'nav-link rounded-md px-3 py-1.5 no-underline transition-colors duration-150',
-                active ? 'is-active text-heading' : 'text-muted hover:bg-surface hover:text-fg',
-              ]}
-            >
-              {label}
-            </a>
-          </li>
-        );
-      })}
+      {sections.map(({ id, label }) => (
+        <li>
+          <a
+            href={sectionHref(id)}
+            data-spy-link={id}
+            data-active={id === ssrActive ? '' : undefined}
+            aria-current={id === ssrActive ? 'page' : undefined}
+            class="nav-link rounded-md px-3 py-1.5 text-muted no-underline transition-colors duration-150 hover:bg-surface hover:text-fg"
+          >
+            {label}
+          </a>
+        </li>
+      ))}
     </ul>
 
     <!-- Mobile trigger -->
@@ -52,34 +47,21 @@ const path = Astro.url.pathname;
     </button>
   </nav>
 
-  <!-- Mobile panel: reads like `show ip interface brief` -->
   <div id="nav-panel" class="nav-panel md:hidden" hidden>
     <ul class="shell flex flex-col gap-0.5 py-3">
-      {navLinks.map(({ label, href, iface }) => {
-        const active = isActivePath(path, href);
-        return (
-          <li>
-            <a
-              href={href}
-              aria-current={active ? 'page' : undefined}
-              class:list={[
-                'flex items-center justify-between rounded-md px-3 py-3 text-sm no-underline transition-colors',
-                active ? 'bg-surface text-heading' : 'text-muted hover:bg-surface hover:text-fg',
-              ]}
-            >
-              <span>{label}</span>
-              <span
-                class:list={[
-                  'meta tabular-nums',
-                  active ? 'text-green' : 'text-muted/60',
-                ]}
-              >
-                f0/{iface}
-              </span>
-            </a>
-          </li>
-        );
-      })}
+      {sections.map(({ id, label, iface }) => (
+        <li>
+          <a
+            href={sectionHref(id)}
+            data-spy-link={id}
+            data-active={id === ssrActive ? '' : undefined}
+            class="nav-mobile-link flex items-center justify-between rounded-md px-3 py-3 text-sm text-muted no-underline transition-colors hover:bg-surface hover:text-fg"
+          >
+            <span>{label}</span>
+            <span class="meta tabular-nums opacity-60">f0/{iface}</span>
+          </a>
+        </li>
+      ))}
     </ul>
   </div>
 </header>
@@ -97,21 +79,18 @@ const path = Astro.url.pathname;
   @supports (backdrop-filter: blur(8px)) {
     .site-header { backdrop-filter: blur(10px) saturate(140%); }
   }
-  /* No backdrop-filter (older iOS/Firefox): stay fully opaque so text never smears. */
   @supports not (backdrop-filter: blur(8px)) {
     .site-header { background: var(--color-bg); }
   }
 
-  /* Depth appears only once the page has actually scrolled. */
   .site-header[data-scrolled] {
-    border-color: color-mix(in oklab, var(--color-border) 100%, transparent);
     box-shadow: 0 1px 0 0 color-mix(in oklab, var(--color-border) 60%, transparent),
                 0 8px 24px -12px rgb(0 0 0 / 0.65);
   }
 
-  /* Active route = interface up. Underline instead of a filled pill: quieter, less jitter. */
   .nav-link { position: relative; }
-  .nav-link.is-active::after {
+  .nav-link[data-active] { color: var(--color-heading); }
+  .nav-link[data-active]::after {
     content: '';
     position: absolute;
     left: 0.75rem;
@@ -121,6 +100,12 @@ const path = Astro.url.pathname;
     border-radius: 2px;
     background: var(--color-green);
   }
+
+  .nav-mobile-link[data-active] {
+    background: var(--color-surface);
+    color: var(--color-heading);
+  }
+  .nav-mobile-link[data-active] .meta { color: var(--color-green); opacity: 1; }
 
   .nav-panel {
     border-top: 1px solid var(--color-border);
@@ -138,16 +123,16 @@ const path = Astro.url.pathname;
 </style>
 
 <script>
-  function initNav() {
+  function initNav(): void {
     const header = document.getElementById('site-header');
     const toggle = document.getElementById('nav-toggle');
     const panel = document.getElementById('nav-panel');
     const sentinel = document.getElementById('nav-sentinel');
     if (!header || !toggle || !panel) return;
-    if (header.dataset.navReady === 'true') return;
-    header.dataset.navReady = 'true';
+    if (header.dataset['navReady'] === 'true') return;
+    header.dataset['navReady'] = 'true';
 
-    const setOpen = (open) => {
+    const setOpen = (open: boolean): void => {
       toggle.setAttribute('aria-expanded', String(open));
       toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
       panel.hidden = !open;
@@ -158,32 +143,30 @@ const path = Astro.url.pathname;
       setOpen(toggle.getAttribute('aria-expanded') !== 'true');
     });
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+    // Tapping a section closes the sheet, otherwise it covers the destination.
+    panel.addEventListener('click', (event) => {
+      if ((event.target as HTMLElement).closest('a')) setOpen(false);
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
         setOpen(false);
         toggle.focus();
       }
     });
 
-    // Never leave the panel open when the layout crosses into the desktop breakpoint.
-    const desktop = window.matchMedia('(min-width: 768px)');
-    desktop.addEventListener('change', (e) => {
-      if (e.matches) setOpen(false);
+    window.matchMedia('(min-width: 768px)').addEventListener('change', (event) => {
+      if (event.matches) setOpen(false);
     });
 
-    // Scroll state without a scroll handler.
-    if (sentinel && 'IntersectionObserver' in window) {
-      new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) header.removeAttribute('data-scrolled');
-          else header.setAttribute('data-scrolled', '');
-        },
-        { rootMargin: '0px' }
-      ).observe(sentinel);
+    if (sentinel) {
+      new IntersectionObserver(([entry]) => {
+        if (entry && entry.isIntersecting) header.removeAttribute('data-scrolled');
+        else header.setAttribute('data-scrolled', '');
+      }).observe(sentinel);
     }
   }
 
   initNav();
-  // Safe if you later enable <ClientRouter />; harmless otherwise.
   document.addEventListener('astro:page-load', initNav);
 </script>

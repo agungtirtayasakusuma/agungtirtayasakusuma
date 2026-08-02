@@ -1,0 +1,115 @@
+---
+// src/components/ExperienceList.astro
+import { experience, type Experience } from '../data/experience';
+
+interface CompanyGroup {
+  company: string;
+  location?: string;
+  logo: string;
+  roles: Experience[];
+}
+
+function logoFor(company: string): string {
+  const key = company.toLowerCase();
+  if (key.includes('avenir')) return '/avenir.jpg';
+  return '';
+}
+
+// Preserve the order roles appear in the data file.
+const companies: CompanyGroup[] = [];
+for (const job of experience) {
+  const existing = companies.find((c) => c.company === job.company);
+  if (existing) {
+    existing.roles.push(job);
+  } else {
+    companies.push({
+      company: job.company,
+      location: job.location,
+      logo: logoFor(job.company),
+      roles: [job],
+    });
+  }
+}
+
+// Total tenure per company, summed from the role list rather than hardcoded.
+function totalYears(roles: Experience[]): string {
+  const months = roles.reduce((sum, r) => {
+    const y = /(\d+)\s*thn/.exec(r.duration);
+    const m = /(\d+)\s*bln/.exec(r.duration);
+    return sum + (y ? Number(y[1]) * 12 : 0) + (m ? Number(m[1]) : 0);
+  }, 0);
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  if (years === 0) return `${rest} bln`;
+  return rest === 0 ? `${years} thn` : `${years} thn ${rest} bln`;
+}
+---
+
+<div class="space-y-4">
+  {companies.map((comp) => (
+    <article class="card p-4 sm:p-6">
+      <header class="flex items-start gap-3 border-b border-border pb-4 sm:gap-4">
+        <div class="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-surface sm:h-12 sm:w-12">
+          {comp.logo ? (
+            <img
+              src={comp.logo}
+              alt=""
+              width="48"
+              height="48"
+              loading="lazy"
+              decoding="async"
+              class="h-full w-full object-cover"
+            />
+          ) : (
+            <span class="font-mono text-sm font-bold text-heading">
+              {comp.company.charAt(0)}
+            </span>
+          )}
+        </div>
+
+        <div class="min-w-0">
+          <h4 class="text-base font-semibold leading-snug text-heading">{comp.company}</h4>
+          <p class="meta mt-1 text-muted">
+            <span class="font-medium text-fg">{totalYears(comp.roles)}</span>
+            {comp.location && <> · {comp.location}</>}
+          </p>
+        </div>
+      </header>
+
+      <div class="mt-5 space-y-6">
+        {comp.roles.map((job, index) => (
+          <div class={index !== 0 ? 'border-t border-border/40 pt-5' : ''}>
+            <div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+              <p class="text-sm font-semibold text-heading sm:text-base">{job.role}</p>
+              <p class="meta text-muted">
+                {job.start} – {job.end} · <span class="font-medium text-fg">{job.duration}</span>
+              </p>
+            </div>
+
+            {job.type && <p class="meta mt-1 text-accent">{job.type}</p>}
+
+            <ul class="mt-3 space-y-2">
+              {job.highlights.map((h) => (
+                <li class="flex gap-2.5 text-sm leading-relaxed">
+                  <span class="mt-2 h-1 w-1 shrink-0 rounded-full bg-muted/60" aria-hidden="true"></span>
+                  <span class="min-w-0 text-muted">{h}</span>
+                </li>
+              ))}
+            </ul>
+
+            {job.skills && job.skills.length > 0 && (
+              <div class="mt-4 flex flex-wrap items-center gap-1.5 border-t border-border/30 pt-3">
+                <span class="meta mr-1 font-semibold text-muted">Skills:</span>
+                {job.skills.map((s) => (
+                  <span class="rounded border border-border/80 bg-surface/60 px-2 py-0.5 text-[11px] font-medium text-muted">
+                    {s}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </article>
+  ))}
+</div>

@@ -1,0 +1,205 @@
+/* src/styles/flow.css
+   Import AFTER global.css in BaseLayout.astro.
+
+   IMPORTANT: delete the old `.rail-sticky` block from global.css.
+   Two definitions of one class across two files is what caused the
+   earlier sticky regression. */
+
+@layer components {
+  /* ══ Page grid ═══════════════════════════════════════════════════ */
+  .page-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr); /* explicit: never let content set the track */
+    gap: 2rem;
+  }
+
+  @media (min-width: 1024px) {
+    .page-grid {
+      grid-template-columns: 16rem minmax(0, 1fr);
+      gap: 3rem;
+      align-items: start;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .page-grid { gap: 3.5rem; }
+  }
+
+  /* ══ Sticky rail ═════════════════════════════════════════════════
+     Two elements by design:
+       .rail-col     grid item · full row height · NO positioning
+       .rail-sticky  block child · content height · does the sticking
+     Travel range = parent height − child height, which is large by
+     construction. Never put `position: sticky` on the grid item. */
+  .rail-col {
+    min-width: 0;
+    height: 100%;
+  }
+
+  @media (min-width: 1024px) {
+    .rail-sticky {
+      position: sticky;
+      top: calc(var(--nav-h) + 1.5rem);
+      /* A sticky box taller than the viewport clips its own bottom forever. */
+      max-height: calc(100svh - var(--nav-h) - 3rem);
+      overflow: hidden auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+    }
+  }
+
+  /* Identity block: a row on small screens, a stack on desktop. */
+  .rail-id {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    min-width: 0;
+  }
+
+  .rail-avatar {
+    width: 5.5rem;
+    aspect-ratio: 1;
+    flex: none;
+    border-radius: 0.75rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
+    object-fit: cover;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3);
+  }
+
+  .rail-term {
+    flex: 1 1 auto;
+    min-width: 0; /* the fix that stops long names blowing out the row */
+  }
+
+  @media (min-width: 380px) {
+    .rail-avatar { width: 6.5rem; }
+  }
+
+  @media (min-width: 1024px) {
+    .rail-id { display: block; }
+    .rail-avatar { width: 100%; }
+    .rail-term { margin-top: 1rem; width: 100%; }
+  }
+
+  /* ══ Sections ════════════════════════════════════════════════════ */
+  .sec {
+    padding-block: clamp(3rem, 7vw, 5rem);
+    scroll-margin-top: calc(var(--nav-h) + 1.5rem);
+    min-width: 0;
+  }
+
+  .sec + .sec {
+    border-top: 1px solid color-mix(in oklab, var(--color-border) 70%, transparent);
+  }
+
+  .sec-first { padding-top: clamp(0.75rem, 3vw, 1.75rem); }
+
+  .sec:focus { outline: none; }
+  .sec:focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--color-accent) 55%, transparent);
+    outline-offset: 8px;
+    border-radius: 12px;
+  }
+
+  .sec-head { max-width: 62ch; }
+  .sec-head > p.t-lead { max-width: 60ch; }
+
+  /* Sub-block inside a section (Skills / Experience / Certificates). */
+  .sub { margin-top: clamp(2.25rem, 5vw, 3rem); scroll-margin-top: calc(var(--nav-h) + 1.5rem); }
+
+  .sec-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 2.5rem;             /* touch target */
+    margin-top: 1.75rem;
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-surface);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+  .sec-more:hover,
+  .sec-more:active {
+    color: var(--color-accent);
+    border-color: color-mix(in oklab, var(--color-accent) 45%, var(--color-border));
+    background: var(--color-surface-2);
+  }
+
+  /* ══ Home stat strip ═════════════════════════════════════════════
+     gap-px over a border-coloured background = hairline dividers with
+     no extra elements and no double borders at the wrap point. */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1px;
+    overflow: hidden;
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    background: var(--color-border);
+  }
+  .stat-cell { background: var(--color-surface); padding: 0.75rem 1rem; min-width: 0; }
+  .stat-cell-wide { grid-column: span 2; }
+
+  @media (min-width: 640px) {
+    .stat-strip { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .stat-cell-wide { grid-column: auto; }
+  }
+
+  /* ══ Contact ═════════════════════════════════════════════════════ */
+  .contact-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+  }
+  @media (min-width: 768px) {
+    .contact-grid {
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+      gap: 3rem;
+    }
+  }
+
+  /* ══ Overflow hardening ══════════════════════════════════════════
+     Credential IDs, emails and long skill names are the usual culprits
+     for horizontal scroll on 360px screens. */
+  .card,
+  .sec,
+  .sec-head { overflow-wrap: break-word; }
+
+  .card img { max-width: 100%; height: auto; }
+
+  /* ══ Touch states ════════════════════════════════════════════════
+     Hover lift only where a real pointer exists; active feedback on touch. */
+  @media (hover: none) {
+    .card:active { background: var(--color-surface-2); }
+  }
+
+  /* ══ Cross-document transitions (archive/detail pages) ═══════════ */
+  ::view-transition-old(root) { animation: flow-out 180ms cubic-bezier(0.4, 0, 1, 1) both; }
+  ::view-transition-new(root) { animation: flow-in 260ms cubic-bezier(0, 0, 0.2, 1) both; }
+
+  @keyframes flow-out { to   { opacity: 0; transform: translateY(-6px); } }
+  @keyframes flow-in  { from { opacity: 0; transform: translateY(10px); } }
+
+  ::view-transition-old(iface-digit) { animation: digit-out 220ms cubic-bezier(0.4, 0, 1, 1) both; }
+  ::view-transition-new(iface-digit) { animation: digit-in  260ms cubic-bezier(0, 0, 0.2, 1) both; }
+
+  @keyframes digit-out { to   { opacity: 0; transform: translateY(-70%); } }
+  @keyframes digit-in  { from { opacity: 0; transform: translateY(70%); } }
+
+  .site-header { view-transition-name: site-header; }
+  ::view-transition-old(site-header),
+  ::view-transition-new(site-header) { animation: none; mix-blend-mode: normal; }
+
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-old(root),
+    ::view-transition-new(root),
+    ::view-transition-old(iface-digit),
+    ::view-transition-new(iface-digit) { animation: none; }
+  }
+}

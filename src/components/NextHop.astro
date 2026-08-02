@@ -1,0 +1,95 @@
+---
+// src/components/NextHop.astro
+interface Props {
+  href: string;
+  iface: number;
+  title: string;
+  /** One line describing what's on the other side. */
+  hint: string;
+}
+const { href, iface, title, hint } = Astro.props;
+---
+
+<a
+  href={href}
+  class="nexthop term group"
+  data-nexthop
+  data-astro-prefetch="viewport"
+  aria-label={`Continue to ${title}`}
+>
+  <div class="term-bar">
+    <span class="term-dot" style="background:#f85149"></span>
+    <span class="term-dot" style="background:#d29922"></span>
+    <span class="term-dot" style="background:#3fb950"></span>
+    <span class="meta ml-1.5 text-muted/60">route</span>
+  </div>
+
+  <div class="term-body !text-[0.78rem] sm:!text-[0.82rem]">
+    <p>
+      <span class="text-muted">router#</span> ip route {title.toLowerCase()}
+    </p>
+    <p class="nexthop-line text-muted">
+      via <span class="text-green">f0/{iface}</span> — {hint}
+    </p>
+    <p class="nexthop-cta mt-2 font-semibold text-accent">
+      continue<span class="nexthop-arrow"> →</span>
+    </p>
+  </div>
+</a>
+
+<style>
+  .nexthop {
+    display: block;
+    text-decoration: none;
+    transition: border-color 0.2s ease, transform 0.2s ease;
+  }
+  .nexthop:hover { border-color: color-mix(in oklab, var(--color-accent) 45%, var(--color-border)); }
+
+  @media (hover: hover) and (pointer: fine) {
+    .nexthop:hover { transform: translateY(-2px); }
+  }
+
+  /* The route line resolves as it scrolls into view — the reward for reaching
+     the bottom, instead of hijacking the scroll to move you there. */
+  .nexthop-line { opacity: 0; transform: translateY(4px); transition: opacity .45s ease, transform .45s ease; }
+  .nexthop-cta  { opacity: 0; transform: translateY(4px); transition: opacity .45s ease .12s, transform .45s ease .12s; }
+  .nexthop[data-armed] .nexthop-line,
+  .nexthop[data-armed] .nexthop-cta { opacity: 1; transform: none; }
+
+  .nexthop-arrow { display: inline-block; transition: transform .2s ease; }
+  .nexthop:hover .nexthop-arrow { transform: translateX(3px); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nexthop-line, .nexthop-cta { opacity: 1; transform: none; transition: none; }
+    .nexthop:hover { transform: none; }
+  }
+</style>
+
+<script>
+  function initNextHops() {
+    const nodes = document.querySelectorAll('[data-nexthop]:not([data-armed])');
+    if (!nodes.length) return;
+
+    if (!('IntersectionObserver' in window)) {
+      nodes.forEach((n) => n.setAttribute('data-armed', ''));
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries, obs) => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue;
+          e.target.setAttribute('data-armed', '');
+          obs.unobserve(e.target); // one-shot: never re-animate on scroll back
+        }
+      },
+      { rootMargin: '0px 0px -12% 0px', threshold: 0.25 }
+    );
+
+    nodes.forEach((n) => io.observe(n));
+    document.addEventListener('astro:before-swap', () => io.disconnect(), { once: true });
+  }
+
+  initNextHops();
+  document.addEventListener('astro:page-load', initNextHops);
+</script>

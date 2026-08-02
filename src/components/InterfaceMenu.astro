@@ -1,0 +1,112 @@
+---
+// src/components/InterfaceMenu.astro
+import { sections, sectionHref, getActiveSectionId } from '../config';
+
+// SSR fallback: correct before hydration, and correct on deep pages
+// where no [data-section] elements exist for the spy to track.
+const ssrActive = getActiveSectionId(Astro.url.pathname);
+---
+
+<nav class="if-menu" aria-label="Sections">
+  <div class="if-menu-head meta">
+    <span class="text-muted/70">show ip interface brief</span>
+  </div>
+
+  <ul class="if-menu-list">
+    {sections.map(({ id, label, iface }) => (
+      <li>
+        <a
+          href={sectionHref(id)}
+          data-spy-link={id}
+          data-active={id === ssrActive ? '' : undefined}
+          aria-current={id === ssrActive ? 'true' : undefined}
+          class="if-row"
+        >
+          <span class="if-dot" aria-hidden="true"></span>
+          <span class="if-name">Fa0/{iface}</span>
+          <span class="if-label">{label}</span>
+          <span class="if-status meta" aria-hidden="true">up</span>
+        </a>
+      </li>
+    ))}
+  </ul>
+</nav>
+
+<style>
+  .if-menu {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .if-menu-head {
+    padding: 0 0 0.5rem 0.5rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .if-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .if-row {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 6px;
+    border-left: 2px solid transparent;
+    font-size: 0.8125rem;
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .if-row:hover {
+    background: var(--color-surface);
+    color: var(--color-fg);
+  }
+
+  .if-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--color-muted) 40%, transparent);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .if-name {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.01em;
+    color: color-mix(in oklab, var(--color-muted) 80%, transparent);
+  }
+
+  .if-label { white-space: nowrap; }
+
+  /* "up" only shows on the live interface — the rest read as down by absence. */
+  .if-status {
+    color: var(--color-green);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .if-row[data-active] {
+    background: var(--color-surface);
+    border-left-color: var(--color-green);
+    color: var(--color-heading);
+  }
+  .if-row[data-active] .if-dot {
+    background: var(--color-green);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-green) 18%, transparent);
+  }
+  .if-row[data-active] .if-name { color: color-mix(in oklab, var(--color-green) 75%, transparent); }
+  .if-row[data-active] .if-status { opacity: 1; }
+</style>

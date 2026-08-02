@@ -10,51 +10,61 @@ export const site = {
 };
 
 /**
- * Each route owns an interface index, like ports on a router chassis.
- * f0/0 is intentionally reserved as the "unassigned" port (404 / unknown routes).
- * Add a route here and the logo, nav and status line all update together.
+ * The five scroll-spy sections, each mapped to a physical interface.
+ * `match` is the archive/detail route that still belongs to this section, so a
+ * deep page like /blog/vlan-notes resolves to f0/3 in the header and footer.
  */
-export const navLinks = [
-  { label: 'Home',     href: '/',         iface: 1 },
-  { label: 'Projects', href: '/projects', iface: 2 },
-  { label: 'Journal',  href: '/blog',     iface: 3 },
-  { label: 'About',    href: '/about',    iface: 4 },
-  { label: 'Contact',  href: '/contact',  iface: 5 },
+export const sections = [
+  { id: 'home',     label: 'Home',     iface: 1, match: null },
+  { id: 'projects', label: 'Projects', iface: 2, match: '/projects' },
+  { id: 'journal',  label: 'Journal',  iface: 3, match: '/blog' },
+  { id: 'about',    label: 'About',    iface: 4, match: '/about' },
+  { id: 'contact',  label: 'Contact',  iface: 5, match: '/contact' },
 ] as const;
 
-export type NavLink = (typeof navLinks)[number];
+export type Section = (typeof sections)[number];
 
-/** Strip trailing slashes so `/projects/` and `/projects` behave identically. */
+/* ── Interface naming ──────────────────────────────────────────────
+   Isomorphic on purpose: the Astro frontmatter renders the SSR value
+   and scroll-spy.ts imports the same functions to update it live.
+   One definition, so the two can never drift. */
+
+export function interfaceName(iface: number): string {
+  return `FastEthernet0/${iface}`;
+}
+
+export function statusLine(iface: number): string {
+  return iface === 0
+    ? `${interfaceName(0)} — administratively down`
+    : `${interfaceName(iface)} — up, line protocol is up`;
+}
+
+export function sectionHref(id: string): string {
+  return id === 'home' ? '/' : `/#${id}`;
+}
+
 function normalize(pathname: string): string {
   const p = pathname.replace(/\/+$/, '');
   return p === '' ? '/' : p;
 }
 
-/** True when `href` is the section the current pathname belongs to. */
-export function isActivePath(pathname: string, href: string): boolean {
+export function getActiveSectionId(pathname: string): string {
   const path = normalize(pathname);
-  if (href === '/') return path === '/';
-  return path === href || path.startsWith(`${href}/`);
+  if (path === '/') return 'home';
+  const hit = sections.find(
+    (s) => s.match !== null && (path === s.match || path.startsWith(`${s.match}/`))
+  );
+  return hit ? hit.id : '';
 }
 
-/**
- * Resolve the interface index for the current route.
- * Nested routes inherit their section: /blog/vlan-notes -> 3.
- * Longest href wins, so future nested sections resolve correctly.
- */
 export function getInterfaceIndex(pathname: string): number {
-  const match = [...navLinks]
-    .sort((a, b) => b.href.length - a.href.length)
-    .find((link) => isActivePath(pathname, link.href));
-  return match?.iface ?? 0;
+  const id = getActiveSectionId(pathname);
+  const hit = sections.find((s) => s.id === id);
+  return hit ? hit.iface : 0;
 }
 
-/** Human label for tooltips / aria, in IOS syntax. */
 export function getInterfaceLabel(pathname: string): string {
-  const i = getInterfaceIndex(pathname);
-  return i === 0
-    ? 'FastEthernet0/0 — administratively down'
-    : `FastEthernet0/${i} — up, line protocol is up`;
+  return statusLine(getInterfaceIndex(pathname));
 }
 
 export const socials = [

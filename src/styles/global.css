@@ -32,14 +32,14 @@
     --rail-offset: calc(var(--nav-h) + 1.5rem);
   }
 
-  html {
+ html {
     background-color: var(--color-bg);
     color-scheme: dark;
     scroll-behavior: smooth;
     /* anchors and #hash targets must clear the sticky header */
     scroll-padding-top: calc(var(--nav-h) + 1rem);
-    /* clip, NOT hidden — `overflow: hidden` on an ancestor silently breaks position: sticky */
-    overflow-x: clip;
+    /* MATIKAN BARIS INI: */
+    /* overflow-x: clip; */
   }
 
   body {
@@ -48,7 +48,8 @@
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     min-height: 100svh;
-    overflow-x: clip;
+    /* MATIKAN BARIS INI JUGA: */
+    /* overflow-x: clip; */
   }
 
   /* Lock background scroll while the mobile menu is open. */
@@ -110,22 +111,15 @@
   .t-h3      { font-size: clamp(1.0625rem, 1rem + 0.3vw, 1.175rem);   line-height: 1.35; }
   .t-lead    { font-size: clamp(1rem, 0.96rem + 0.25vw, 1.125rem);    line-height: 1.7; }
 
-  /* ── Sticky rail (desktop only) ───────────────────────────────
-     Mobile keeps it in normal flow; sticky on a short column is jarring. */
-  @media (min-width: 1024px) {
-    .rail-sticky {
-      position: sticky;
-      top: var(--rail-offset);
-      align-self: start;   /* required: a stretched grid item can never stick */
-    }
-  }
+  /* The grid item: plain, full-height column. No positioning, no align-self.
+     Its only job is to be a tall containing block. */
+  .rail-col { min-width: 0; }
 
   .sr-only-focusable:not(:focus):not(:focus-within) {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip-path: inset(50%); white-space: nowrap;
   }
 }
-
 @layer components {
   .card {
     border-radius: 8px;

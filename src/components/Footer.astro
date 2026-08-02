@@ -1,17 +1,24 @@
 ---
 // src/components/Footer.astro
-import { site, socials, getInterfaceLabel } from '../config';
+import { site, socials, getInterfaceIndex, statusLine } from '../config';
 
-const status = getInterfaceLabel(Astro.url.pathname);
+// SSR value: correct before the spy runs, and correct on deep pages
+// where there are no [data-section] elements to track.
+const iface = getInterfaceIndex(Astro.url.pathname);
+const status = statusLine(iface);
 ---
 
 <footer class="mt-auto">
   <div class="shell">
-    <div class="flex flex-col gap-5 border-t border-border py-8 sm:flex-row sm:items-center sm:justify-between">
-      <div>
+    <div class="flex flex-col gap-6 border-t border-border py-8 sm:flex-row sm:items-end sm:justify-between">
+      <div class="min-w-0">
         <p class="text-sm text-muted">© {new Date().getFullYear()} {site.author}</p>
-        <p class="meta mt-1.5 text-muted/60">
-          <span class="text-green">●</span> {status}
+
+        <p class="meta mt-2 flex items-start gap-2 text-muted/70">
+          <span class="if-led" aria-hidden="true"></span>
+          {/* Updated live by scroll-spy. aria-live is deliberately absent —
+              announcing every scroll change would be constant noise. */}
+          <span data-iface-status data-iface={iface} class="break-words">{status}</span>
         </p>
       </div>
 
@@ -22,7 +29,7 @@ const status = getInterfaceLabel(Astro.url.pathname);
               href={s.href}
               target="_blank"
               rel="noopener noreferrer"
-              class="text-muted no-underline transition-colors hover:text-accent"
+              class="inline-flex min-h-[2.25rem] items-center text-muted no-underline transition-colors hover:text-accent"
             >
               {s.label}
             </a>
@@ -32,3 +39,25 @@ const status = getInterfaceLabel(Astro.url.pathname);
     </div>
   </div>
 </footer>
+
+<style>
+  .if-led {
+    margin-top: 0.35em;
+    width: 6px;
+    height: 6px;
+    flex: none;
+    border-radius: 9999px;
+    background: var(--color-green);
+    box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-green) 16%, transparent);
+    animation: led-pulse 2.4s ease-in-out infinite;
+  }
+
+  @keyframes led-pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.45; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .if-led { animation: none; }
+  }
+</style>
