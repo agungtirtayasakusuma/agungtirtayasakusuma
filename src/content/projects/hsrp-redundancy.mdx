@@ -1,0 +1,19 @@
+---
+title: "First Hop Redundancy Protocol (HSRP)"
+description: "Mencegah network downtime dengan mengkonfigurasi Active dan Standby gateway menggunakan HSRP pada router Cisco."
+pubDate: 2026-07-30
+status: "completed"
+difficulty: "intermediate"
+protocols: ["HSRP", "FHRP", "IP Routing"]
+devices: ["3x Cisco 1841 Routers", "1x Catalyst 2960 Switch"]
+topology: "../../assets/hsrp.png"
+---
+
+Dalam skenario jaringan *enterprise*, PC klien tidak boleh kehilangan akses ke luar jaringan hanya karena satu router rusak. Proyek ini menyelesaikan masalah *Single Point of Failure* tersebut menggunakan **First Hop Redundancy Protocol (FHRP)**, secara spesifik menggunakan Cisco HSRP.
+
+Berdasarkan topologi, `GATEWAY-R1` dan `GATEWAY-R2` terhubung ke segmen LAN yang sama dan dikonfigurasi untuk berbagi satu **Virtual IP Address (VIP)** dan Virtual MAC Address. PC klien akan diarahkan ke Virtual IP tersebut sebagai *default gateway* mereka.
+
+**Highlight Konfigurasi:**
+*   **Active & Standby Roles:** Mengatur nilai *Priority* HSRP agar `GATEWAY-R1` menjadi router utama (Active) dan `GATEWAY-R2` menjadi router cadangan (Standby).
+*   **Preemption:** Mengaktifkan fitur `standby preempt` agar router utama (R1) otomatis mengambil alih kembali perannya sebagai Active Router setelah ia menyala kembali dari kondisi *down/failover*.
+*   **Pengujian Failover:** Melakukan *continuous ping* dari PC ke jaringan luar sambil mensimulasikan pemutusan kabel pada R1. Trafik berhasil berpindah ke R2 hanya dengan sedikit jeda (RTO sementara) tanpa koneksi terputus total.

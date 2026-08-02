@@ -1,0 +1,17 @@
+---
+title: "VLAN Trunking Protocol (VTP) & Allowed VLAN"
+description: "Otomatisasi distribusi database VLAN ke seluruh switch di jaringan menggunakan VTP dan pengamanan link trunk dengan VLAN filtering."
+pubDate: 2026-07-27
+status: "completed"
+difficulty: "intermediate"
+protocols: ["VTP", "VLAN", "802.1Q", "Trunking"]
+devices: ["3x Catalyst 2960 Switches"]
+topology: "../../assets/vtp.png"
+---
+
+Mengelola puluhan VLAN di jaringan skala menengah hingga besar secara manual di setiap switch tentu sangat memakan waktu dan rentan terjadi kesalahan konfigurasi (*human error*). Proyek ini menyelesaikan masalah tersebut menggunakan **VLAN Trunking Protocol (VTP)**.
+
+**Highlight Konfigurasi:**
+*   **VTP Modes (Server & Client):** Menetapkan satu switch utama sebagai *VTP Server* untuk membuat, menghapus, atau memodifikasi VLAN. Switch lainnya diatur sebagai *VTP Client* yang akan secara otomatis menyinkronkan *database* VLAN mereka dengan server.
+*   **VTP Domain & Password:** Mengamankan proses sinkronisasi VTP dengan menetapkan nama domain dan *password* otentikasi yang sama di semua switch.
+*   **Trunk Permitted VLANs:** Menerapkan *security best practice* pada jalur *Trunk* (802.1Q). Alih-alih membiarkan semua trafik VLAN lewat, konfigurasi diperketat menggunakan perintah `switchport trunk allowed vlan` untuk membatasi (permit/deny) hanya VLAN tertentu saja yang diizinkan melintasi *link* antar switch.

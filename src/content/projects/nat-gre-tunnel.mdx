@@ -1,0 +1,17 @@
+---
+title: "NAT & GRE Tunnel (Site-to-Site)"
+description: "Implementasi NAT Overload, Static NAT, dan pembuatan GRE Tunnel untuk menghubungkan dua private network melintasi jaringan publik."
+pubDate: 2026-07-30
+status: "completed"
+difficulty: "advanced"
+protocols: ["NAT", "PAT", "GRE Tunnel", "Static Routing"]
+devices: ["3x Cisco 1841 Routers", "2x Catalyst 2960 Switches"]
+topology: "../../assets/nat-gre.png"
+---
+
+Lab ini menyimulasikan arsitektur jaringan *Wide Area Network (WAN)* di mana dua cabang perusahaan (R1 dan R3) terhubung melalui jaringan publik/ISP (R2). Karena alamat IP *Private* tidak dapat dirouting di internet, diterapkan kombinasi NAT dan *Tunneling*.
+
+**Highlight Konfigurasi:**
+*   **Dynamic PAT (NAT Overload):** Dikonfigurasi pada R1 menggunakan `access-list` agar sekumpulan PC di jaringan *private* (`192.168.10.0/24`) dapat mengakses jaringan publik menggunakan satu IP *Public*.
+*   **Static NAT & Port Forwarding:** Dikonfigurasi pada R3 untuk mengekspos internal Server ke jaringan publik. Menggunakan translasi statik *one-to-one* dan port spesifik (misal: membelokkan trafik publik port 4443 ke IP *private* server port 443).
+*   **GRE Tunnel (Generic Routing Encapsulation):** Membuat *virtual interface* (`Tunnel 0`) antara R1 dan R3 untuk membungkus (enkapsulasi) paket data *private*. Dengan tambahan *static route* yang diarahkan ke IP *Tunnel*, PC di cabang R1 dapat melakukan ping langsung ke Server di cabang R3 melintasi *public network* dengan aman.

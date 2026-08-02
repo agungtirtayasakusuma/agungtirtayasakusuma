@@ -1,0 +1,19 @@
+---
+title: "Multi-Area OSPF Lab"
+description: "Three-area OSPF design with route summarization on Cisco 2911s."
+pubDate: 2026-07-20
+status: in-progress
+difficulty: intermediate
+tags: [ospf, routing, packet-tracer]
+protocols: [OSPF]
+devices: ["3x Cisco 2911", "2x Catalyst 2960"]
+packetTracerFile: /downloads/ospf-multiarea.pkt
+featured: true
+---
+
+Design notes for a three-area topology with summarization at the ABRs.
+
+```bash title="R1 — configure ospf"
+R1(config)# router ospf 1
+R1(config-router)# network 10.0.0.0 0.0.0.255 area 0
+```

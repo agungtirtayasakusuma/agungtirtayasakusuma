@@ -1,0 +1,17 @@
+---
+title: "Inter-VLAN: Router-on-a-Stick (ROAS)"
+description: "Menghubungkan VLAN 10 dan VLAN 20 melintasi dua switch menggunakan satu physical interface pada Cisco Router 2911."
+pubDate: 2026-07-26
+status: "completed"
+difficulty: "intermediate"
+protocols: ["VLAN", "802.1Q", "Trunking"]
+devices: ["1x Cisco 2911 Router", "2x Catalyst 2960 Switches"]
+topology: "../../assets/roas.png"
+---
+
+Proyek ini mendemonstrasikan metode klasik **Router-on-a-Stick (ROAS)** untuk menghubungkan perangkat di *broadcast domain* yang berbeda (VLAN 10 dan VLAN 20). 
+
+**Highlight Konfigurasi:**
+* Konfigurasi **Access Ports** untuk PC dan **Trunk Link (802.1Q)** antar switch dan ke router.
+* Menggunakan fitur **Sub-interface** pada router (`Gig0/0.10` dan `Gig0/0.20`) sebagai *default gateway* masing-masing VLAN.
+* Metode ini efisien untuk topologi skala kecil yang ingin menghemat port fisik pada router.

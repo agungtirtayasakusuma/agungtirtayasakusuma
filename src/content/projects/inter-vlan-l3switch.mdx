@@ -1,0 +1,18 @@
+---
+title: "Inter-VLAN: Layer 3 Switch (SVI)"
+description: "Routing antar departemen (Finance, Engineer, Server) tanpa router eksternal menggunakan Multilayer Switch."
+pubDate: 2026-07-27
+status: "completed"
+difficulty: "intermediate"
+protocols: ["SVI", "IP Routing", "VLAN"]
+devices: ["1x Catalyst 3560 Multilayer Switch"]
+topology: "../../assets/svi-l3.png"
+---
+
+Dalam skenario *enterprise* skala menengah ke atas, menggunakan router terpisah untuk Inter-VLAN bisa menyebabkan *bottleneck*. Lab ini menyelesaikan masalah tersebut dengan menggunakan **Switch Virtual Interface (SVI)** pada Layer 3 Switch.
+
+**Highlight Konfigurasi:**
+* Segmentasi 3 departemen: **VLAN 10 (Engineer)**, **VLAN 20 (Finance)**, dan **VLAN 123 (Server)**.
+* Mengaktifkan kemampuan *routing* pada switch menggunakan perintah global `ip routing`.
+* Membuat antarmuka virtual (SVI) untuk setiap VLAN yang bertindak sebagai *default gateway* (contoh: `interface vlan 10`, `interface vlan 20`).
+* Metode ini memberikan performa *hardware-switched* yang jauh lebih cepat dibandingkan metode ROAS tradisional.

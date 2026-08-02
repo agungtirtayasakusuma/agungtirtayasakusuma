@@ -1,0 +1,44 @@
+---
+
+// src/pages/projects/index.astro
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+import ProjectCard from '../../components/ProjectCard.astro';
+
+import { getCollection } from 'astro:content';
+
+
+
+const projects = (await getCollection('projects', ({ data }) => !data.draft))
+
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+---
+
+
+
+<BaseLayout title="Projects — арговеста.notes" description="Cisco and MikroTik labs, topologies, and configurations.">
+
+  <div class="py-4">
+
+    <p class="meta uppercase tracking-widest text-green">Portfolio</p>
+
+    <h1 class="mt-2 text-3xl font-semibold">Projects</h1>
+
+    <p class="mt-3 max-w-xl text-muted">
+
+      A collection of Cisco labs, networking projects, and production-inspired implementations.
+
+    </p>
+
+    <div class="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
+
+      {projects.map((p) => <ProjectCard project={p} />)}
+
+    </div>
+
+  </div>
+
+</BaseLayout> 
+

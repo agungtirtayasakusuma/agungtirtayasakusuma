@@ -1,0 +1,20 @@
+---
+title: "IP Connectivity: OSPFv2 & Static Routing"
+description: "Membangun end-to-end routing antar LAN yang berbeda melintasi multi-hop router menggunakan media FastEthernet dan Serial WAN."
+pubDate: 2026-07-29
+status: "completed"
+difficulty: "intermediate"
+protocols: ["OSPFv2", "Static Routing", "Point-to-Point"]
+devices: ["3x Cisco 1841 Routers", "2x Catalyst 2960 Switches"]
+topology: "../../assets/routing.png"
+---
+
+Routing adalah inti dari infrastruktur jaringan. Lab ini mendemonstrasikan bagaimana membangun konektivitas *end-to-end* melintasi beberapa router (multi-hop) agar PC di satu site dapat berkomunikasi dengan Server di site lainnya.
+
+Berdasarkan topologi, antar-router dihubungkan menggunakan kombinasi media **FastEthernet** dan koneksi WAN **Serial** (Point-to-Point).
+
+**Highlight Konfigurasi:**
+*   **Static & Default Routing:** Mengkonfigurasi *next-hop* dan *exit interface* secara manual untuk rute-rute spesifik, termasuk mengatur *Gateway of Last Resort*.
+*   **OSPFv2 (Single Area):** Mengaktifkan *dynamic routing* OSPF untuk mendistribusikan *network prefix* secara otomatis antar router.
+*   **Serial Interface Configuration:** Mengatur *Clock Rate* pada sisi DCE dari kabel Serial agar sinkronisasi data antar router WAN berjalan lancar.
+*   **Verifikasi:** Memastikan tabel routing (`show ip route`) terbentuk dengan benar dan *ping* sukses dari PC (192.168.10.x) ke Server (192.168.20.x).

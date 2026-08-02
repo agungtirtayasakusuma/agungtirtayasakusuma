@@ -1,0 +1,17 @@
+---
+// src/components/StatusBadge.astro
+interface Props { status: 'completed' | 'in-progress' | 'planned'; }
+const { status } = Astro.props;
+
+const map = {
+  'completed':   { cls: 'text-green border-green/35 bg-green/10',   dot: 'bg-green',  label: 'Completed' },
+  'in-progress': { cls: 'text-yellow border-yellow/35 bg-yellow/10', dot: 'bg-yellow', label: 'In progress' },
+  'planned':     { cls: 'text-accent border-accent/35 bg-accent/10', dot: 'bg-accent', label: 'Planned' },
+} as const;
+
+const { cls, dot, label } = map[status];
+---
+
+<span class:list={['meta inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-0.5', cls]}>
+  <span class:list={['h-1.5 w-1.5 rounded-full', dot]}></span>{label}
+</span>

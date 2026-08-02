@@ -1,0 +1,21 @@
+---
+// src/components/Footer.astro
+import { site, socials } from '../config';
+---
+
+<footer class="mx-auto max-w-3xl px-4 py-8 text-sm text-muted">
+  <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-border pt-6">
+    <p>© {new Date().getFullYear()} {site.author}</p>
+    
+    <div class="flex flex-wrap items-center gap-4">
+      {socials.map((s) => (
+        <a href={s.href} target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors">
+          {s.label}
+        </a>
+      ))}
+      <a href="/rss.xml" class="hover:text-accent transition-colors inline-flex items-center gap-1">
+        RSS
+      </a>
+    </div>
+  </div>
+</footer>

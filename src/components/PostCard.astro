@@ -1,0 +1,23 @@
+---
+// src/components/PostCard.astro
+import type { CollectionEntry } from 'astro:content';
+import Tag from './Tag.astro';
+
+interface Props { post: CollectionEntry<'blog'>; }
+const { post } = Astro.props;
+const date = post.data.pubDate.toISOString().slice(0, 10);
+---
+
+<a href={`/blog/${post.id}`} class="card group flex flex-col p-5 no-underline">
+  <div class="meta flex items-center gap-2.5 text-muted">
+    <time>{date}</time>
+    {post.data.type === 'log' && (
+      <span class="rounded-md border border-green/35 bg-green/10 px-1.5 py-px text-green">log</span>
+    )}
+  </div>
+  <h3 class="mt-2 text-base font-semibold text-heading transition-colors group-hover:text-accent">{post.data.title}</h3>
+  <p class="mt-1.5 text-sm leading-relaxed text-muted">{post.data.description}</p>
+  {post.data.tags.length > 0 && (
+    <div class="mt-4 flex flex-wrap gap-1.5">{post.data.tags.map((t) => <Tag label={t} />)}</div>
+  )}
+</a>

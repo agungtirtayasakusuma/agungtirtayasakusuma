@@ -1,0 +1,19 @@
+---
+title: "Spanning Tree Protocol (STP)"
+description: "Mencegah Layer 2 loop dan broadcast storm pada topologi switch redundan menggunakan Spanning Tree Protocol."
+pubDate: 2026-07-28
+status: "completed"
+difficulty: "intermediate"
+protocols: ["STP", "Rapid PVST+", "Layer 2"]
+devices: ["4x Catalyst 2960/3560 Switches"]
+topology: "../../assets/stp.png"
+---
+
+Dalam desain jaringan *enterprise* yang mumpuni, ketersediaan jalur cadangan (redundansi) antar switch sangat diperlukan. Namun, jalur fisik yang melingkar dapat menyebabkan *Layer 2 loop* dan memicu *Broadcast Storm* yang bisa melumpuhkan seluruh jaringan.
+
+Proyek ini mendemonstrasikan bagaimana **Spanning Tree Protocol (STP)** bekerja secara otomatis di latar belakang untuk mendeteksi dan mencegah *looping* tersebut.
+
+**Highlight Konfigurasi & Konsep:**
+*   **Root Bridge Election:** Memahami bagaimana switch memilih *Root Bridge* berdasarkan *Bridge ID* (Priority dan MAC Address).
+*   **Port Roles & States:** Menganalisis peran setiap port pada topologi redundan (*Root Port*, *Designated Port*, dan *Blocking/Alternate Port*). Port dengan indikator oranye pada topologi menandakan port tersebut dalam status *Blocking* untuk memutus rantai *loop*.
+*   **Rapid PVST+:** Penggunaan standar *Rapid Per-VLAN Spanning Tree* Cisco untuk konvergensi (pemulihan jalur) yang lebih cepat ketika terjadi perubahan topologi atau kabel terputus.

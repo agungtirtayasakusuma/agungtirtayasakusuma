@@ -1,0 +1,89 @@
+---
+// src/components/ContactForm.astro
+import { contact } from '../config';
+---
+
+<form id="contact-form" action="https://api.web3forms.com/submit" method="POST" class="space-y-4">
+  <input type="hidden" name="access_key" value={contact.web3formsKey} />
+  <input type="hidden" name="from_name" value="Journey — Portfolio Contact" />
+  <!-- honeypot: invisible to humans, bots fill it and get dropped -->
+  <input type="checkbox" name="botcheck" tabindex="-1" autocomplete="off" style="display:none" />
+
+  <div>
+    <label for="name" class="meta block text-muted mb-1.5">NAME</label>
+    <input
+      type="text" id="name" name="name" required autocomplete="name" placeholder="Your name"
+      class="w-full rounded-md border border-border bg-surface px-3.5 py-2 text-sm text-fg placeholder:text-muted/50 focus:border-accent focus:outline-none"
+    />
+  </div>
+
+  <div>
+    <label for="email" class="meta block text-muted mb-1.5">EMAIL</label>
+    <input
+      type="email" id="email" name="email" required autocomplete="email" placeholder="you@example.com"
+      class="w-full rounded-md border border-border bg-surface px-3.5 py-2 text-sm text-fg placeholder:text-muted/50 focus:border-accent focus:outline-none"
+    />
+  </div>
+
+  <div>
+    <label for="subject" class="meta block text-muted mb-1.5">SUBJECT</label>
+    <input
+      type="text" id="subject" name="subject" required placeholder="What's this about?"
+      class="w-full rounded-md border border-border bg-surface px-3.5 py-2 text-sm text-fg placeholder:text-muted/50 focus:border-accent focus:outline-none"
+    />
+  </div>
+
+  <div>
+    <label for="message" class="meta block text-muted mb-1.5">MESSAGE</label>
+    <textarea
+      id="message" name="message" rows="5" required placeholder="Tell me about your project or inquiry..."
+      class="w-full resize-y rounded-md border border-border bg-surface px-3.5 py-2 text-sm text-fg placeholder:text-muted/50 focus:border-accent focus:outline-none"
+    ></textarea>
+  </div>
+
+  <button
+    id="contact-submit" type="submit"
+    class="inline-flex items-center gap-2 rounded-md bg-heading px-4 py-2 text-sm font-medium text-bg transition-colors hover:bg-fg disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    Send message
+  </button>
+
+  <p id="contact-status" class="meta hidden" role="status" aria-live="polite"></p>
+</form>
+
+<script>
+  const form = document.getElementById('contact-form') as HTMLFormElement | null;
+  const status = document.getElementById('contact-status');
+  const btn = document.getElementById('contact-submit') as HTMLButtonElement | null;
+
+  if (form && status && btn) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const label = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = 'Sending…';
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' },
+        });
+        const data = await res.json();
+        if (data.success) {
+          form.reset();
+          status.className = 'meta text-green';
+          status.textContent = '✓ Thanks — your message has been sent.';
+        } else {
+          status.className = 'meta text-yellow';
+          status.textContent = data.message || 'Something went wrong — please email me directly.';
+        }
+      } catch {
+        status.className = 'meta text-yellow';
+        status.textContent = 'Network error — please email me directly.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = label;
+      }
+    });
+  }
+</script>

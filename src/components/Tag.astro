@@ -1,0 +1,13 @@
+---
+// src/components/Tag.astro
+interface Props { label: string; href?: string; }
+const { label, href } = Astro.props;
+const Wrapper = href ? 'a' : 'span';
+---
+
+<Wrapper
+  href={href}
+  class="meta inline-flex items-center rounded-md border border-border bg-surface px-2 py-0.5 text-muted no-underline transition-colors hover:border-accent/50 hover:text-accent"
+>
+  {label}
+</Wrapper>
