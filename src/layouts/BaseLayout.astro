@@ -17,7 +17,6 @@ interface Props {
 }
 
 const {
-  title,
   description = siteMeta.description,
   image = '/og.png',
   contained = true,
@@ -37,19 +36,19 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
     <meta name="theme-color" content="#0d1117" />
     <meta name="color-scheme" content="dark" />
 
-    <title>{title}</title>
+    <title>Agung Tirtayasa Kusuma | Portofolio</title>
     <meta name="description" content={description} />
     {canonical && <link rel="canonical" href={canonical} />}
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={siteMeta.title} />
-    <meta property="og:title" content={title} />
+    <meta property="og:title" content="Agung Tirtayasa Kusuma | Portofolio" />
     <meta property="og:description" content={description} />
     {canonical && <meta property="og:url" content={canonical} />}
     {ogImage && <meta property="og:image" content={ogImage} />}
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={title} />
+    <meta name="twitter:title" content="Agung Tirtayasa Kusuma | Portofolio" />
     <meta name="twitter:description" content={description} />
     {ogImage && <meta name="twitter:image" content={ogImage} />}
 
@@ -83,7 +82,7 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
     <ScrollSpy />
 
     <script>
-      // Membersihkan hash nyangkut secara agresif pada navigasi klien Astro
+      // Pembersih hash agresif menggunakan watcher interval agar tidak bisa nempel di halaman selain home
       function stripHash() {
         if (window.location.pathname !== '/' && window.location.hash) {
           history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -92,7 +91,11 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
 
       stripHash();
       document.addEventListener('astro:before-preparation', stripHash);
+      document.addEventListener('astro:after-swap', stripHash);
       document.addEventListener('astro:page-load', stripHash);
+      
+      // Penjaga ekstra jika hash mencoba menyusup
+      setInterval(stripHash, 50);
     </script>
   </body>
 </html>

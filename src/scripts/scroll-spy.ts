@@ -3,43 +3,13 @@
 // Single source of truth for "which interface is live right now".
 // Broadcasts to every registered target, so the header logo, sidebar menu,
 // top nav, footer status line and the browser tab title stay in lockstep.
-//
-// Target hooks (any number of each, anywhere in the document):
-//   [data-iface-digit]   -> "3"
-//   [data-iface-name]    -> "FastEthernet0/3"
-//   [data-iface-status]  -> "FastEthernet0/3 — up, line protocol is up"
-//   [data-spy-link]      -> gets [data-active] + aria-current
-//
-// Section labels for the tab title resolve in this order:
-//   1. the section's own `data-label` attribute (per-page override)
-//   2. `sections[].label` in config.ts, matched on element id
-//
-// Fully typed. Passes `astro check` under astro/tsconfigs/strictest.
 
 import { sections as sectionConfig, site, interfaceName, statusLine } from '../config';
 
 export interface ScrollSpyOptions {
-  /**
-   * Where the activation line sits within the visible area below the header,
-   * as a fraction. 0.3 ≈ "active once the section reaches 30% down".
-   */
   activationRatio?: number;
-
-  /** Write the active section into document.title. Default: true. */
-  updateTitle?: boolean;
-
-  /** Prefix for the tab title. Default: site.author. */
+  updateTitle?: boolean; // Diubah default-nya jadi false agar judul tab tetap statis
   titleBase?: string;
-
-  /**
-   * Settle time before writing document.title, in ms.
-   *
-   * The logo, menu and footer update on the frame — they're on screen and
-   * instant feedback is the point. The tab title is different: it lives in
-   * browser chrome, it's what a bookmark and a history entry get named, and
-   * thrashing it during a fast flick makes the tab visibly flicker. So it
-   * waits for the scroll to settle. Default: 180.
-   */
   titleDebounceMs?: number;
 }
 
@@ -53,15 +23,16 @@ interface SpySection {
 export type Cleanup = () => void;
 
 export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefined {
-  const activationRatio = options.activationRatio ?? 0.3;
-  const updateTitle = options.updateTitle ?? true;
-  const titleBase = options.titleBase ?? site.author;
-  const titleDebounceMs = options.titleDebounceMs ?? 180;
-
   const root = document.documentElement;
   if (root.dataset['scrollSpyReady'] === 'true') return undefined;
 
   const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-section]'));
+  if (!nodes.length) return undefined;
+
+  const activationRatio = options.activationRatio ?? 0.3;
+  const updateTitle = options.updateTitle ?? false; // <-- KUNCI UTAMA: Default false agar judul tab konstan
+  const titleBase = options.titleBase ?? site.author;
+  const titleDebounceMs = options.titleDebounceMs ?? 180;
 
   const sections: SpySection[] = nodes.map((el) => {
     const meta = sectionConfig.find((s) => s.id === el.id);
@@ -86,22 +57,12 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
   const header = document.querySelector<HTMLElement>('#site-header');
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-
-  // Captured before we touch it, so cleanup can hand the document back
-  // exactly as it was served.
   const initialTitle = document.title;
 
   let currentId = '';
   let frame = 0;
   let titleTimer = 0;
 
-  /**
-   * Which section owns the activation line.
-   *
-   * Geometric rather than "highest intersectionRatio": a section taller than
-   * the viewport can never reach a 30% ratio, so a pure threshold test would
-   * skip it. The observer decides *when* to recompute, never *what* wins.
-   */
   function resolveActive(): SpySection {
     const headerH = header ? header.offsetHeight : 0;
     const line = headerH + (window.innerHeight - headerH) * activationRatio;
@@ -111,14 +72,13 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
     let active: SpySection = first;
     for (const section of sections) {
       if (section.el.getBoundingClientRect().top <= line) active = section;
-      else break; // DOM order — the first miss ends the scan
+      else break;
     }
     return active;
   }
 
   function queueTitle(label: string): void {
     if (!updateTitle) return;
-
     if (titleTimer !== 0) window.clearTimeout(titleTimer);
 
     titleTimer = window.setTimeout(() => {
@@ -156,8 +116,6 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
     const desiredHash = active === first ? '' : `#${active.id}`;
     if (window.location.hash !== desiredHash) {
       const url = `${window.location.pathname}${window.location.search}${desiredHash}`;
-      // replaceState — pushState would stack one entry per section and make
-      // the back button useless.
       window.history.replaceState(window.history.state, '', url);
     }
   }
@@ -178,15 +136,13 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', schedule, { passive: true });
 
-  // Menu clicks handled here so behaviour is identical with or without
-  // <ClientRouter />, and so focus follows for keyboard users.
   function onLinkClick(event: MouseEvent): void {
     const link = event.currentTarget as HTMLAnchorElement;
     const id = link.dataset['spyLink'];
     if (!id) return;
 
     const target = document.getElementById(id);
-    if (!target) return; // deep page — let the browser follow the href
+    if (!target) return;
 
     event.preventDefault();
     target.scrollIntoView({
@@ -211,10 +167,7 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
     if (frame !== 0) window.cancelAnimationFrame(frame);
     if (titleTimer !== 0) window.clearTimeout(titleTimer);
 
-    // Restore before a client-side swap, so the incoming page's own <title>
-    // is never overwritten by a stale section label.
     document.title = initialTitle;
-
     delete root.dataset['scrollSpyReady'];
   };
 
