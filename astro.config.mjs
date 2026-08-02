@@ -6,7 +6,7 @@ import expressiveCode from 'astro-expressive-code';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  site: 'https://net-notes.pages.dev',
+  site: 'https://agungtirtayasakusuma.cloud',
 
   // Prefetch is what makes the page-to-page jump feel instant.
   // 'viewport' = fetch a route's HTML as soon as its link scrolls into view,
