@@ -1,37 +1,189 @@
 ---
-import { site, navLinks } from '../config';
+// src/components/Nav.astro
+import Logo from './Logo.astro';
+import { navLinks, isActivePath } from '../config';
 
 const path = Astro.url.pathname;
-const isActive = (href: string) =>
-  href === '/' ? path === '/' : path.startsWith(href);
 ---
 
-<header class="sticky top-0 z-50 border-b border-border bg-bg/85 backdrop-blur">
-  <nav class="mx-auto flex h-14 max-w-4xl items-center justify-between px-6">
-    <a
-      href="/"
-      class="font-mono text-sm font-semibold text-heading no-underline"
-   >
-      Porto<span style="color: #3fb950;" class="font-mono">f0/1</span><span class="text-accent">.</span>
-    </a>
+{/* Sentinel: lets the header know it has left the top of the document, with no scroll listener. */}
+<div id="nav-sentinel" aria-hidden="true"></div>
 
-    <ul class="flex items-center gap-1 text-sm">
-      {navLinks.map(({ label, href }) => (
-        <li>
-          <a
-            href={href}
-            aria-current={isActive(href) ? 'page' : undefined}
-            class:list={[
-              'rounded-md px-3 py-1.5 no-underline transition-colors',
-              isActive(href)
-                ? 'bg-surface text-heading'
-                : 'text-muted hover:bg-surface hover:text-fg',
-            ]}
-          >
-            {label}
-          </a>
-        </li>
-      ))}
+<header id="site-header" class="site-header">
+  <nav class="shell flex h-[var(--nav-h)] items-center justify-between gap-4" aria-label="Primary">
+    <Logo />
+
+    <!-- Desktop -->
+    <ul class="hidden items-center gap-0.5 text-sm md:flex">
+      {navLinks.map(({ label, href }) => {
+        const active = isActivePath(path, href);
+        return (
+          <li>
+            <a
+              href={href}
+              aria-current={active ? 'page' : undefined}
+              class:list={[
+                'nav-link rounded-md px-3 py-1.5 no-underline transition-colors duration-150',
+                active ? 'is-active text-heading' : 'text-muted hover:bg-surface hover:text-fg',
+              ]}
+            >
+              {label}
+            </a>
+          </li>
+        );
+      })}
     </ul>
+
+    <!-- Mobile trigger -->
+    <button
+      id="nav-toggle"
+      type="button"
+      class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-fg transition-colors hover:border-muted/60 md:hidden"
+      aria-expanded="false"
+      aria-controls="nav-panel"
+      aria-label="Open menu"
+    >
+      <svg class="icon-open h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      </svg>
+      <svg class="icon-close hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M6 6l12 12M18 6L6 18" />
+      </svg>
+    </button>
   </nav>
+
+  <!-- Mobile panel: reads like `show ip interface brief` -->
+  <div id="nav-panel" class="nav-panel md:hidden" hidden>
+    <ul class="shell flex flex-col gap-0.5 py-3">
+      {navLinks.map(({ label, href, iface }) => {
+        const active = isActivePath(path, href);
+        return (
+          <li>
+            <a
+              href={href}
+              aria-current={active ? 'page' : undefined}
+              class:list={[
+                'flex items-center justify-between rounded-md px-3 py-3 text-sm no-underline transition-colors',
+                active ? 'bg-surface text-heading' : 'text-muted hover:bg-surface hover:text-fg',
+              ]}
+            >
+              <span>{label}</span>
+              <span
+                class:list={[
+                  'meta tabular-nums',
+                  active ? 'text-green' : 'text-muted/60',
+                ]}
+              >
+                f0/{iface}
+              </span>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </div>
 </header>
+
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    border-bottom: 1px solid var(--color-border);
+    background: color-mix(in oklab, var(--color-bg) 82%, transparent);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+  }
+
+  @supports (backdrop-filter: blur(8px)) {
+    .site-header { backdrop-filter: blur(10px) saturate(140%); }
+  }
+  /* No backdrop-filter (older iOS/Firefox): stay fully opaque so text never smears. */
+  @supports not (backdrop-filter: blur(8px)) {
+    .site-header { background: var(--color-bg); }
+  }
+
+  /* Depth appears only once the page has actually scrolled. */
+  .site-header[data-scrolled] {
+    border-color: color-mix(in oklab, var(--color-border) 100%, transparent);
+    box-shadow: 0 1px 0 0 color-mix(in oklab, var(--color-border) 60%, transparent),
+                0 8px 24px -12px rgb(0 0 0 / 0.65);
+  }
+
+  /* Active route = interface up. Underline instead of a filled pill: quieter, less jitter. */
+  .nav-link { position: relative; }
+  .nav-link.is-active::after {
+    content: '';
+    position: absolute;
+    left: 0.75rem;
+    right: 0.75rem;
+    bottom: -0.4rem;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--color-green);
+  }
+
+  .nav-panel {
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+    max-height: calc(100dvh - var(--nav-h));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .nav-panel[hidden] { display: none; }
+
+  #nav-toggle[aria-expanded='true'] .icon-open { display: none; }
+  #nav-toggle[aria-expanded='true'] .icon-close { display: block; }
+
+  #nav-sentinel { position: absolute; top: 0; height: 1px; width: 100%; }
+</style>
+
+<script>
+  function initNav() {
+    const header = document.getElementById('site-header');
+    const toggle = document.getElementById('nav-toggle');
+    const panel = document.getElementById('nav-panel');
+    const sentinel = document.getElementById('nav-sentinel');
+    if (!header || !toggle || !panel) return;
+    if (header.dataset.navReady === 'true') return;
+    header.dataset.navReady = 'true';
+
+    const setOpen = (open) => {
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+      panel.hidden = !open;
+      document.documentElement.classList.toggle('nav-open', open);
+    };
+
+    toggle.addEventListener('click', () => {
+      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+
+    // Never leave the panel open when the layout crosses into the desktop breakpoint.
+    const desktop = window.matchMedia('(min-width: 768px)');
+    desktop.addEventListener('change', (e) => {
+      if (e.matches) setOpen(false);
+    });
+
+    // Scroll state without a scroll handler.
+    if (sentinel && 'IntersectionObserver' in window) {
+      new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) header.removeAttribute('data-scrolled');
+          else header.setAttribute('data-scrolled', '');
+        },
+        { rootMargin: '0px' }
+      ).observe(sentinel);
+    }
+  }
+
+  initNav();
+  // Safe if you later enable <ClientRouter />; harmless otherwise.
+  document.addEventListener('astro:page-load', initNav);
+</script>

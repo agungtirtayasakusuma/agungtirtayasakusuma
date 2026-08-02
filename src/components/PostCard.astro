@@ -5,19 +5,27 @@ import Tag from './Tag.astro';
 
 interface Props { post: CollectionEntry<'blog'>; }
 const { post } = Astro.props;
-const date = post.data.pubDate.toISOString().slice(0, 10);
+const iso = post.data.pubDate.toISOString();
+const date = iso.slice(0, 10);
 ---
 
-<a href={`/blog/${post.id}`} class="card group flex flex-col p-5 no-underline">
+<a href={`/blog/${post.id}`} class="card group flex h-full flex-col p-5 no-underline">
   <div class="meta flex items-center gap-2.5 text-muted">
-    <time>{date}</time>
+    <time datetime={iso}>{date}</time>
     {post.data.type === 'log' && (
       <span class="rounded-md border border-green/35 bg-green/10 px-1.5 py-px text-green">log</span>
     )}
   </div>
-  <h3 class="mt-2 text-base font-semibold text-heading transition-colors group-hover:text-accent">{post.data.title}</h3>
+
+  <h3 class="t-h3 mt-2 font-semibold text-heading transition-colors group-hover:text-accent">
+    {post.data.title}
+  </h3>
+
   <p class="mt-1.5 text-sm leading-relaxed text-muted">{post.data.description}</p>
+
   {post.data.tags.length > 0 && (
-    <div class="mt-4 flex flex-wrap gap-1.5">{post.data.tags.map((t) => <Tag label={t} />)}</div>
+    <div class="mt-auto flex flex-wrap gap-1.5 pt-4">
+      {post.data.tags.map((t) => <Tag label={t} />)}
+    </div>
   )}
 </a>

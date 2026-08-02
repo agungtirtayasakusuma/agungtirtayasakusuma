@@ -10,12 +10,15 @@ interface Props {
   title: string;
   description?: string;
   image?: string;
+  /** Set false on pages that manage their own width (rare). */
+  contained?: boolean;
 }
 
 const {
   title,
   description = siteMeta.description,
   image = '/og.png',
+  contained = true,
 } = Astro.props;
 
 const canonical = Astro.site ? new URL(Astro.url.pathname, Astro.site) : undefined;
@@ -26,15 +29,18 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <link rel="icon" type="image/png" href="/icongw.png" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content="#0d1117" />
+    <meta name="color-scheme" content="dark" />
 
     <title>{title}</title>
     <meta name="description" content={description} />
     {canonical && <link rel="canonical" href={canonical} />}
 
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={siteMeta.title} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     {canonical && <meta property="og:url" content={canonical} />}
@@ -49,11 +55,27 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
     <link rel="alternate" type="application/rss+xml" title={`${siteMeta.title} — journal`} href="/rss.xml" />
   </head>
 
-  <body class="flex min-h-screen flex-col">
+  <body class="flex min-h-svh flex-col">
+    <a
+      href="#main"
+      class="sr-only-focusable fixed left-4 top-3 z-[60] rounded-md border border-border bg-surface px-3 py-2 text-sm text-heading no-underline"
+    >
+      Skip to content
+    </a>
+
     <Nav />
-    <main class="mx-auto w-full max-w-4xl flex-1 px-6 py-14 sm:py-16">
+
+    <main
+      id="main"
+      class:list={[
+        'flex-1',
+        contained && 'shell',
+        'py-[clamp(2rem,5vw,3.5rem)]',
+      ]}
+    >
       <slot />
     </main>
+
     <Footer />
   </body>
 </html>

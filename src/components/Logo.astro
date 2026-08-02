@@ -1,0 +1,53 @@
+---
+// src/components/Logo.astro
+import { site, getInterfaceIndex, getInterfaceLabel } from '../config';
+
+interface Props {
+  size?: 'sm' | 'md';
+}
+const { size = 'sm' } = Astro.props;
+
+const iface = getInterfaceIndex(Astro.url.pathname);
+const status = getInterfaceLabel(Astro.url.pathname);
+---
+
+<a
+  href="/"
+  title={status}
+  aria-label={`${site.title} — home. ${status}`}
+  class:list={[
+    'group inline-flex items-baseline font-mono font-semibold tabular-nums no-underline',
+    size === 'md' ? 'text-base' : 'text-sm',
+  ]}
+>
+  <span class="text-heading">Porto</span><span class="text-green">f0/</span><span
+    class="iface text-green"
+    data-iface={iface}>{iface}</span
+  ><span class="text-accent">.</span>
+</a>
+
+<style>
+  /* The index is the signature element: it reads as a state change, not decoration. */
+  .iface {
+    display: inline-block;
+    min-width: 1ch; /* keeps width stable across digits — no layout shift */
+    text-align: center;
+    animation: iface-up 420ms ease-out both;
+  }
+
+  a:hover .iface {
+    text-shadow: 0 0 10px color-mix(in oklab, var(--color-green) 55%, transparent);
+  }
+
+  /* one short "link up" blink, then steady */
+  @keyframes iface-up {
+    0%   { opacity: 0; transform: translateY(-2px); }
+    40%  { opacity: 1; }
+    55%  { opacity: 0.4; }
+    100% { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .iface { animation: none; }
+  }
+</style>
