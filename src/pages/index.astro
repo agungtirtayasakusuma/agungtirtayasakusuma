@@ -19,8 +19,24 @@ const recentPosts = (await getCollection('blog', ({ data }) => !data.draft))
     <!-- Ubah md:items-center menjadi md:items-start agar sejajar secara profesional dari atas -->
     <div class="flex flex-col items-start gap-10 md:flex-row md:items-start">
       
-      <!-- Bungkus foto dan jendela terminal -->
-      <div class="flex flex-col items-center sm:items-start shrink-0 w-[210px]">
+      <!-- Bungkus utama dikunci ukurannya agar proporsional dan tidak terlalu besar -->
+      <div class="flex flex-col shrink-0 w-36 sm:w-44 gap-3">
+        
+        <!-- Jendela Terminal Mengikuti Lebar Foto -->
+        <div class="w-full font-mono text-[10px] bg-black/90 border border-border rounded-lg shadow-xl overflow-hidden">
+          <!-- Header Tombol Titik (Merah, Kuning, Hijau) -->
+          <div class="flex items-center gap-1.5 px-2 py-1.5 bg-surface/50 border-b border-border">
+            <div class="w-2 h-2 rounded-full bg-red-500"></div>
+            <div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+            <div class="w-2 h-2 rounded-full bg-green-500"></div>
+          </div>
+          <!-- Isi Teks Terminal (Terpotong rapi jika kepanjangan) -->
+          <div class="px-2.5 py-1.5 text-left truncate">
+            <span style="color: #3fb950;" class="font-semibold"># {site.author}</span>
+          </div>
+        </div>
+
+        <!-- Foto Profil dengan ukuran proporsional -->
         <img
           src={avatarImg.src}
           width={avatarImg.width}
@@ -29,21 +45,7 @@ const recentPosts = (await getCollection('blog', ({ data }) => !data.draft))
           class="pixelated w-full h-auto aspect-square rounded-xl border border-border bg-surface shadow-lg shadow-black/30 object-cover"
         />
         
-        <!-- Jendela Terminal -->
-        <div class="mt-3 w-full font-mono text-[11px] bg-black/90 border border-border rounded-lg shadow-xl overflow-hidden">
-          <!-- Header Tombol Titik (Merah, Kuning, Hijau) -->
-          <div class="flex items-center gap-1.5 px-2.5 py-2 bg-surface/50 border-b border-border">
-            <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
-            <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-          </div>
-          <!-- Isi Teks Terminal -->
-          <div class="p-2.5 text-left leading-relaxed truncate">
-            <span style="color: #3fb950;" class="font-semibold">{site.author}</span>
-          </div>
-        </div>
       </div>
-
       <div>
         <p class="meta uppercase tracking-widest text-green">{site.role}</p>
         <h1 class="mt-3 max-w-2xl text-3xl font-semibold leading-tight sm:text-4xl">
