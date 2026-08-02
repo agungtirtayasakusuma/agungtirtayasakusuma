@@ -82,7 +82,7 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
     <ScrollSpy />
 
     <script>
-      // Pembersih hash agresif menggunakan watcher interval agar tidak bisa nempel di halaman selain home
+      // Pembersih hash aman tanpa interval membebani CPU
       function stripHash() {
         if (window.location.pathname !== '/' && window.location.hash) {
           history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -91,11 +91,7 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
 
       stripHash();
       document.addEventListener('astro:before-preparation', stripHash);
-      document.addEventListener('astro:after-swap', stripHash);
       document.addEventListener('astro:page-load', stripHash);
-      
-      // Penjaga ekstra jika hash mencoba menyusup
-      setInterval(stripHash, 50);
     </script>
   </body>
 </html>

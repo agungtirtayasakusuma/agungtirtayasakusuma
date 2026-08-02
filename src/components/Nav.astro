@@ -6,7 +6,8 @@ import { sections, getActiveSectionId } from '../config';
 const ssrActive = getActiveSectionId(Astro.url.pathname);
 const isHome = Astro.url.pathname === '/';
 
-// Fungsi penentu href dinamis: jika di halaman detail/sub, arahkan ke /#id atau /
+// On the home page use a bare hash so no navigation is attempted.
+// Everywhere else use an absolute path so the link works from a deep page.
 function getSmartHref(id: string): string {
   if (id === 'home') return '/';
   return isHome ? `#${id}` : `/#${id}`;
@@ -40,15 +41,17 @@ function getSmartHref(id: string): string {
     <button
       id="nav-toggle"
       type="button"
-      class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border bg-surface text-fg transition-colors hover:border-muted/60 md:hidden"
+      class="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-surface text-fg transition-colors hover:border-muted/60 md:hidden"
       aria-expanded="false"
       aria-controls="nav-panel"
       aria-label="Open menu"
     >
-      <svg class="icon-open h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <svg class="icon-open h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
         <path d="M4 7h16M4 12h16M4 17h16" />
       </svg>
-      <svg class="icon-close hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <svg class="icon-close h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" aria-hidden="true" focusable="false">
         <path d="M6 6l12 12M18 6L6 18" />
       </svg>
     </button>
@@ -62,7 +65,8 @@ function getSmartHref(id: string): string {
             href={getSmartHref(id)}
             data-spy-link={id}
             data-active={id === ssrActive ? '' : undefined}
-            class="nav-mobile-link flex items-center justify-between rounded-md px-3 py-3 text-sm text-muted no-underline transition-colors hover:bg-surface hover:text-fg"
+            aria-current={id === ssrActive ? 'page' : undefined}
+            class="nav-mobile-link flex min-h-[2.75rem] items-center justify-between rounded-md px-3 py-3 text-sm text-muted no-underline transition-colors hover:bg-surface hover:text-fg"
           >
             <span>{label}</span>
             <span class="meta tabular-nums opacity-60">f0/{iface}</span>
@@ -95,6 +99,16 @@ function getSmartHref(id: string): string {
                 0 8px 24px -12px rgb(0 0 0 / 0.65);
   }
 
+  /* ── Icon state ────────────────────────────────────────────────
+     Exactly one rule hides exactly one icon, and the two conditions
+     are mutually exclusive by construction. There is no "default +
+     override" pair, so no cascade race — and `:not([aria-expanded='true'])`
+     also covers the attribute being missing or malformed, which the
+     previous `[aria-expanded='false']` form did not. */
+  #nav-toggle svg { display: block; }
+  #nav-toggle:not([aria-expanded='true']) .icon-close { display: none; }
+  #nav-toggle[aria-expanded='true'] .icon-open { display: none; }
+
   .nav-link { position: relative; }
   .nav-link[data-active] { color: var(--color-heading); }
   .nav-link[data-active]::after {
@@ -114,17 +128,19 @@ function getSmartHref(id: string): string {
   }
   .nav-mobile-link[data-active] .meta { color: var(--color-green); opacity: 1; }
 
+  /* ── Panel ─────────────────────────────────────────────────────
+     A dropdown, not a modal. The page behind stays scrollable on
+     purpose; `overscroll-behavior: contain` stops the panel's own
+     scroll from chaining to the document. No body lock anywhere. */
   .nav-panel {
     border-top: 1px solid var(--color-border);
     background: var(--color-bg);
     max-height: calc(100dvh - var(--nav-h));
     overflow-y: auto;
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
   }
   .nav-panel[hidden] { display: none; }
-
-  #nav-toggle[aria-expanded='true'] .icon-open { display: none; }
-  #nav-toggle[aria-expanded='true'] .icon-close { display: block; }
 
   #nav-sentinel { position: absolute; top: 0; height: 1px; width: 100%; }
 </style>
@@ -135,52 +151,113 @@ function getSmartHref(id: string): string {
     const toggle = document.getElementById('nav-toggle');
     const panel = document.getElementById('nav-panel');
     const sentinel = document.getElementById('nav-sentinel');
+
     if (!header || !toggle || !panel) return;
     if (header.dataset['navReady'] === 'true') return;
     header.dataset['navReady'] = 'true';
 
-    const setOpen = (open: boolean): void => {
+    // Defensive: clear any lock class left behind by an older build.
+    document.documentElement.classList.remove('nav-open');
+
+    // Every listener below is registered with this signal, so teardown is a
+    // single abort() call. Without it, each client-side navigation stacked
+    // another keydown and matchMedia listener pointing at detached nodes.
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    function setOpen(open: boolean): void {
+      if (!toggle || !panel) return;
       toggle.setAttribute('aria-expanded', String(open));
       toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
       panel.hidden = !open;
-      document.documentElement.classList.toggle('nav-open', open);
-    };
+    }
 
-    toggle.addEventListener('click', () => {
-      setOpen(toggle.getAttribute('aria-expanded') !== 'true');
-    });
+    function isOpen(): boolean {
+      return toggle !== null && toggle.getAttribute('aria-expanded') === 'true';
+    }
 
-    panel.addEventListener('click', (event) => {
-      const link = (event.target as HTMLElement).closest('a');
-      if (!link) return;
-      
-      setOpen(false);
+    // Start from a known state — a client-side navigation can restore markup
+    // mid-transition, and an inconsistent attribute is what made the icon
+    // appear to vanish.
+    setOpen(false);
 
-      // Jika user klik menu saat berada di luar homepage, biarkan ClientRouter memuat halaman utama tanpa hash nyangkut
-      const href = link.getAttribute('href') || '';
-      if (window.location.pathname !== '/' && href.startsWith('/#')) {
-        event.preventDefault();
-        window.location.href = href;
-      }
-    });
+    toggle.addEventListener('click', () => setOpen(!isOpen()), { signal });
 
-    document.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
-        setOpen(false);
-        toggle.focus();
-      }
-    });
+    /**
+     * Close in the CAPTURE phase.
+     *
+     * scroll-spy binds its own handler directly on each <a>, and that handler
+     * calls preventDefault() then scrollIntoView(). Capture runs root -> target,
+     * so this fires *before* the anchor's own listener. The panel is therefore
+     * already collapsed — and the sticky header already back to its short
+     * height — by the time scrollIntoView measures the destination.
+     *
+     * Closing afterwards (bubble phase) removed ~200px of header mid-animation
+     * and shifted the target out from under the running scroll. That was the
+     * "lags or gets stuck" symptom.
+     */
+    panel.addEventListener(
+      'click',
+      (event) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest('a')) setOpen(false);
+      },
+      { capture: true, signal }
+    );
 
-    window.matchMedia('(min-width: 768px)').addEventListener('change', (event) => {
-      if (event.matches) setOpen(false);
-    });
+    // Tap outside the header closes the drawer.
+    document.addEventListener(
+      'pointerdown',
+      (event) => {
+        if (!isOpen()) return;
+        const target = event.target;
+        if (target instanceof Node && header !== null && !header.contains(target)) {
+          setOpen(false);
+        }
+      },
+      { signal }
+    );
 
+    document.addEventListener(
+      'keydown',
+      (event) => {
+        if (event.key === 'Escape' && isOpen()) {
+          setOpen(false);
+          toggle?.focus();
+        }
+      },
+      { signal }
+    );
+
+    // Crossing into the desktop breakpoint must never leave a stuck overlay.
+    const desktop = window.matchMedia('(min-width: 768px)');
+    desktop.addEventListener(
+      'change',
+      (event) => {
+        if (event.matches) setOpen(false);
+      },
+      { signal }
+    );
+
+    let observer: IntersectionObserver | undefined;
     if (sentinel) {
-      new IntersectionObserver(([entry]) => {
+      observer = new IntersectionObserver(([entry]) => {
         if (entry && entry.isIntersecting) header.removeAttribute('data-scrolled');
         else header.setAttribute('data-scrolled', '');
-      }).observe(sentinel);
+      });
+      observer.observe(sentinel);
     }
+
+    document.addEventListener(
+      'astro:before-swap',
+      () => {
+        controller.abort();
+        observer?.disconnect();
+        document.documentElement.classList.remove('nav-open');
+        delete header.dataset['navReady'];
+      },
+      { once: true }
+    );
   }
 
   initNav();

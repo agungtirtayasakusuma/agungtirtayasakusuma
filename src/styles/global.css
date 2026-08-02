@@ -51,10 +51,6 @@
     /* MATIKAN BARIS INI JUGA: */
     /* overflow-x: clip; */
   }
-
-  /* Lock background scroll while the mobile menu is open. */
-  html.nav-open, html.nav-open body { overflow: hidden; }
-
   h1, h2, h3, h4 {
     color: var(--color-heading);
     font-weight: 600;
