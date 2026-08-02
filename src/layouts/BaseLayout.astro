@@ -81,5 +81,18 @@ const ogImage = Astro.site ? new URL(image, Astro.site) : undefined;
 
     {/* No-op on pages without [data-section] elements. */}
     <ScrollSpy />
+
+    <script>
+      // Membersihkan hash nyangkut secara agresif pada navigasi klien Astro
+      function stripHash() {
+        if (window.location.pathname !== '/' && window.location.hash) {
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+        }
+      }
+
+      stripHash();
+      document.addEventListener('astro:before-preparation', stripHash);
+      document.addEventListener('astro:page-load', stripHash);
+    </script>
   </body>
 </html>

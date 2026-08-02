@@ -1,9 +1,16 @@
 ---
 // src/components/Nav.astro
 import Logo from './Logo.astro';
-import { sections, sectionHref, getActiveSectionId } from '../config';
+import { sections, getActiveSectionId } from '../config';
 
 const ssrActive = getActiveSectionId(Astro.url.pathname);
+const isHome = Astro.url.pathname === '/';
+
+// Fungsi penentu href dinamis: jika di halaman detail/sub, arahkan ke /#id atau /
+function getSmartHref(id: string): string {
+  if (id === 'home') return '/';
+  return isHome ? `#${id}` : `/#${id}`;
+}
 ---
 
 <div id="nav-sentinel" aria-hidden="true"></div>
@@ -17,7 +24,7 @@ const ssrActive = getActiveSectionId(Astro.url.pathname);
       {sections.map(({ id, label }) => (
         <li>
           <a
-            href={sectionHref(id)}
+            href={getSmartHref(id)}
             data-spy-link={id}
             data-active={id === ssrActive ? '' : undefined}
             aria-current={id === ssrActive ? 'page' : undefined}
@@ -52,7 +59,7 @@ const ssrActive = getActiveSectionId(Astro.url.pathname);
       {sections.map(({ id, label, iface }) => (
         <li>
           <a
-            href={sectionHref(id)}
+            href={getSmartHref(id)}
             data-spy-link={id}
             data-active={id === ssrActive ? '' : undefined}
             class="nav-mobile-link flex items-center justify-between rounded-md px-3 py-3 text-sm text-muted no-underline transition-colors hover:bg-surface hover:text-fg"
@@ -143,9 +150,18 @@ const ssrActive = getActiveSectionId(Astro.url.pathname);
       setOpen(toggle.getAttribute('aria-expanded') !== 'true');
     });
 
-    // Tapping a section closes the sheet, otherwise it covers the destination.
     panel.addEventListener('click', (event) => {
-      if ((event.target as HTMLElement).closest('a')) setOpen(false);
+      const link = (event.target as HTMLElement).closest('a');
+      if (!link) return;
+      
+      setOpen(false);
+
+      // Jika user klik menu saat berada di luar homepage, biarkan ClientRouter memuat halaman utama tanpa hash nyangkut
+      const href = link.getAttribute('href') || '';
+      if (window.location.pathname !== '/' && href.startsWith('/#')) {
+        event.preventDefault();
+        window.location.href = href;
+      }
     });
 
     document.addEventListener('keydown', (event) => {

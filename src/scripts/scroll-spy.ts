@@ -1,8 +1,8 @@
 // src/scripts/scroll-spy.ts
 //
 // Single source of truth for "which interface is live right now".
-// Broadcasts to every registered target, so the header logo, the sidebar
-// menu, the top nav and the footer status line all stay in lockstep.
+// Broadcasts to every registered target, so the header logo, sidebar menu,
+// top nav, footer status line and the browser tab title stay in lockstep.
 //
 // Target hooks (any number of each, anywhere in the document):
 //   [data-iface-digit]   -> "3"
@@ -10,9 +10,13 @@
 //   [data-iface-status]  -> "FastEthernet0/3 — up, line protocol is up"
 //   [data-spy-link]      -> gets [data-active] + aria-current
 //
+// Section labels for the tab title resolve in this order:
+//   1. the section's own `data-label` attribute (per-page override)
+//   2. `sections[].label` in config.ts, matched on element id
+//
 // Fully typed. Passes `astro check` under astro/tsconfigs/strictest.
 
-import { interfaceName, statusLine } from '../config';
+import { sections as sectionConfig, site, interfaceName, statusLine } from '../config';
 
 export interface ScrollSpyOptions {
   /**
@@ -20,28 +24,54 @@ export interface ScrollSpyOptions {
    * as a fraction. 0.3 ≈ "active once the section reaches 30% down".
    */
   activationRatio?: number;
+
+  /** Write the active section into document.title. Default: true. */
+  updateTitle?: boolean;
+
+  /** Prefix for the tab title. Default: site.author. */
+  titleBase?: string;
+
+  /**
+   * Settle time before writing document.title, in ms.
+   *
+   * The logo, menu and footer update on the frame — they're on screen and
+   * instant feedback is the point. The tab title is different: it lives in
+   * browser chrome, it's what a bookmark and a history entry get named, and
+   * thrashing it during a fast flick makes the tab visibly flicker. So it
+   * waits for the scroll to settle. Default: 180.
+   */
+  titleDebounceMs?: number;
 }
 
 interface SpySection {
   el: HTMLElement;
   id: string;
   iface: number;
+  label: string;
 }
 
 export type Cleanup = () => void;
 
 export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefined {
   const activationRatio = options.activationRatio ?? 0.3;
+  const updateTitle = options.updateTitle ?? true;
+  const titleBase = options.titleBase ?? site.author;
+  const titleDebounceMs = options.titleDebounceMs ?? 180;
 
   const root = document.documentElement;
   if (root.dataset['scrollSpyReady'] === 'true') return undefined;
 
   const nodes = Array.from(document.querySelectorAll<HTMLElement>('[data-section]'));
-  const sections: SpySection[] = nodes.map((el) => ({
-    el,
-    id: el.id,
-    iface: Number.parseInt(el.dataset['iface'] ?? '0', 10) || 0,
-  }));
+
+  const sections: SpySection[] = nodes.map((el) => {
+    const meta = sectionConfig.find((s) => s.id === el.id);
+    return {
+      el,
+      id: el.id,
+      iface: Number.parseInt(el.dataset['iface'] ?? '0', 10) || 0,
+      label: el.dataset['label'] ?? meta?.label ?? '',
+    };
+  });
 
   const first = sections[0];
   const last = sections[sections.length - 1];
@@ -57,15 +87,20 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
 
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+  // Captured before we touch it, so cleanup can hand the document back
+  // exactly as it was served.
+  const initialTitle = document.title;
+
   let currentId = '';
   let frame = 0;
+  let titleTimer = 0;
 
   /**
    * Which section owns the activation line.
    *
    * Geometric rather than "highest intersectionRatio": a section taller than
    * the viewport can never reach a 30% ratio, so a pure threshold test would
-   * skip it. The observer below decides *when* to recompute, never *what* wins.
+   * skip it. The observer decides *when* to recompute, never *what* wins.
    */
   function resolveActive(): SpySection {
     const headerH = header ? header.offsetHeight : 0;
@@ -81,6 +116,18 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
     return active;
   }
 
+  function queueTitle(label: string): void {
+    if (!updateTitle) return;
+
+    if (titleTimer !== 0) window.clearTimeout(titleTimer);
+
+    titleTimer = window.setTimeout(() => {
+      titleTimer = 0;
+      const next = label === '' ? initialTitle : `${titleBase} — ${label}`;
+      if (document.title !== next) document.title = next;
+    }, titleDebounceMs);
+  }
+
   function apply(): void {
     const active = resolveActive();
     if (active.id === currentId) return;
@@ -94,7 +141,6 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
     for (const el of nameTargets) el.textContent = name;
     for (const el of statusTargets) {
       el.textContent = status;
-      // Lets the footer LED / tooltip react without extra bookkeeping.
       el.setAttribute('data-iface', digit);
     }
 
@@ -104,6 +150,8 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
       if (isActive) link.setAttribute('aria-current', 'true');
       else link.removeAttribute('aria-current');
     }
+
+    queueTitle(active.label);
 
     const desiredHash = active === first ? '' : `#${active.id}`;
     if (window.location.hash !== desiredHash) {
@@ -159,7 +207,14 @@ export function initScrollSpy(options: ScrollSpyOptions = {}): Cleanup | undefin
     window.removeEventListener('scroll', schedule);
     window.removeEventListener('resize', schedule);
     for (const link of links) link.removeEventListener('click', onLinkClick);
+
     if (frame !== 0) window.cancelAnimationFrame(frame);
+    if (titleTimer !== 0) window.clearTimeout(titleTimer);
+
+    // Restore before a client-side swap, so the incoming page's own <title>
+    // is never overwritten by a stale section label.
+    document.title = initialTitle;
+
     delete root.dataset['scrollSpyReady'];
   };
 

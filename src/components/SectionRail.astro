@@ -1,17 +1,17 @@
 ---
 // src/components/SectionRail.astro
-import { homeSections } from '../config';
+import { sections } from '../config';
 ---
 
 <nav class="section-rail hidden lg:block" aria-label="Sections on this page">
   <p class="meta mb-2 text-muted/70">show ip int brief</p>
   <ul class="flex flex-col">
-    {homeSections.map(({ id, sub, label }) => (
+    {sections.map(({ id, iface, label }: { id: string; iface: number; label: string }) => (
       <li>
         <a href={`#${id}`} data-rail-link class="rail-link">
           <span class="rail-dot" aria-hidden="true"></span>
           <span class="rail-name">{label}</span>
-          <span class="rail-iface meta tabular-nums">f0/1.{sub}</span>
+          <span class="rail-iface meta tabular-nums">f0/1.{iface}</span>
         </a>
       </li>
     ))}

@@ -1,8 +1,7 @@
 ---
 // src/pages/about.astro
 import BaseLayout from '../layouts/BaseLayout.astro';
-import Button from '../components/Button.astro';
-import { site, socials } from '../config';
+import { site } from '../config';
 import { experience } from '../data/experience';
 import { certificates } from '../data/certificates';
 
@@ -165,7 +164,7 @@ const companyList = Object.values(groupedMap);
       </div>
     </section>
 
-    <!-- Licenses & Certifications (Interactive Expandable Skills) -->
+    <!-- Licenses & Certifications -->
     <section class="mt-16">
       <h2 class="text-xl font-semibold">Licenses & Certifications</h2>
       <div class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -246,33 +245,39 @@ const companyList = Object.values(groupedMap);
         })}
       </div>
     </section>
-
-    <!-- CTA -->
   </div>
 </BaseLayout>
 
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  function initSkillsToggle() {
     const buttons = document.querySelectorAll('.toggle-skills-btn');
     buttons.forEach((btn) => {
-      const originalText = btn.textContent || '';
-      btn.setAttribute('data-original-text', originalText);
-
-      btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-target');
-        if (!targetId) return;
-        const targetEl = document.getElementById(targetId);
-        if (targetEl) {
-          const isHidden = targetEl.classList.contains('hidden');
-          if (isHidden) {
-            targetEl.classList.remove('hidden');
-            btn.textContent = '(tutup)';
-          } else {
-            targetEl.classList.add('hidden');
-            btn.textContent = btn.getAttribute('data-original-text') || originalText;
-          }
+      if (btn instanceof HTMLButtonElement) {
+        const originalText = btn.textContent || '';
+        if (!btn.hasAttribute('data-original-text')) {
+          btn.setAttribute('data-original-text', originalText);
         }
-      });
+
+        btn.addEventListener('click', () => {
+          const targetId = btn.getAttribute('data-target');
+          if (!targetId) return;
+          const targetEl = document.getElementById(targetId);
+          if (targetEl) {
+            const isHidden = targetEl.classList.contains('hidden');
+            if (isHidden) {
+              targetEl.classList.remove('hidden');
+              btn.textContent = '(tutup)';
+            } else {
+              targetEl.classList.add('hidden');
+              btn.textContent = btn.getAttribute('data-original-text') || originalText;
+            }
+          }
+        });
+      }
     });
-  });
+  }
+
+  // Jalankan saat pertama load dan saat navigasi ClientRouter Astro
+  initSkillsToggle();
+  document.addEventListener('astro:page-load', initSkillsToggle);
 </script>
