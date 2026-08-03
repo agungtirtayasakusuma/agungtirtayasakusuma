@@ -4,7 +4,7 @@ export const site = {
   author: 'Agung Tirtayasa Kusuma',
   role: 'Network Engineer',
   tagline: 'Learning by building. Improving one network at a time.',
-  cv: '/cv.pdf',
+  cv: '/Agung Tirtayasa Kusuma_Network Engineer.pdf',
   description:
     'Cisco labs, networking projects, and technical documentation focused on routing, switching, network services, and network security',
 };
